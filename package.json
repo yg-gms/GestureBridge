@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Gesture analyzer for presentations",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+"scripts": {
+  "dev": "vite"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yg-gms/GestureBridge.git"
