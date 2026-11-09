@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Gesture analyzer for presentations",
   "main": "index.js",
-"scripts": {
-  "dev": "vite"
-},
+  "scripts": {
+    "dev": "vite"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yg-gms/GestureBridge.git"
@@ -20,5 +20,8 @@
   "homepage": "https://github.com/yg-gms/GestureBridge#readme",
   "devDependencies": {
     "vite": "8.3.6"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.2.2"
   }
 }
