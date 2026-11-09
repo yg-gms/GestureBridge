@@ -1,0 +1,24 @@
+{
+  "name": "gesturebridge",
+  "version": "1.0.0",
+  "description": "Gesture analyzer for presentations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yg-gms/GestureBridge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/yg-gms/GestureBridge/issues"
+  },
+  "homepage": "https://github.com/yg-gms/GestureBridge#readme",
+  "devDependencies": {
+    "vite": "8.3.6"
+  }
+}
