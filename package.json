@@ -4,7 +4,9 @@
   "description": "Gesture analyzer for presentations",
   "main": "index.js",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build --base=/GestureBridge/",
+    "preview": "vite preview --base=/GestureBridge/"
   },
   "repository": {
     "type": "git",
