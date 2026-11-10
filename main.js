@@ -10,8 +10,58 @@ const startButton = document.getElementById("start-camera");
 const statusText = document.getElementById("status");
 const video = document.getElementById("camera-preview");
 const stopButton = document.getElementById("stop-camera");
+const canvas = document.getElementById("hand-overlay");
+const context = canvas.getContext("2d");
+
+function drawLandmarks(landmarks) {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  context.fillStyle = "#00ff88";
+
+  for (const point of landmarks) {
+    context.beginPath();
+    context.arc(
+      point.x * canvas.width,
+      point.y * canvas.height,
+      4,
+      0,
+      Math.PI * 2
+    );
+    context.fill();
+  }
+}
 
 let handLandmarker = null;
+
+let detectionTimer = null;
+let lastVideoTime = -1;
+
+function detectHands() {
+  if (!video.srcObject) return;
+
+  try {
+    if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+      lastVideoTime = video.currentTime;
+
+      const result = handLandmarker.detectForVideo(video, performance.now());
+      const handCount = result.landmarks.length;
+
+      drawLandmarks(handCount === 1 ? result.landmarks[0] : []);
+
+      statusText.textContent =
+        handCount === 0 ? "No hand detected." :
+        handCount === 1 ? "One hand detected." :
+        "Show only one hand.";
+    }
+  } catch (error) {
+    console.error(error);
+    handleStopClick();
+    statusText.textContent = "Hand tracking failed. Please try again.";
+    return;
+  }
+
+  detectionTimer = setTimeout(detectHands, 100);
+}
 
 async function loadHandModel() {
   const base = import.meta.env.BASE_URL;
@@ -46,6 +96,11 @@ async function handleStartClick() {
     });
 
     video.srcObject = stream;
+    await video.play();
+
+    lastVideoTime = -1;
+    detectHands();
+
     stopButton.disabled = false;
     statusText.textContent = "Camera and hand tracker are ready.";
   } catch (error) {
@@ -59,18 +114,21 @@ async function handleStartClick() {
 startButton.addEventListener("click", handleStartClick);
 
 function handleStopClick() {
-  const stream = video.srcObject;
 
-  if (stream) {
-    for (const track of stream.getTracks()) {
-      track.stop();
+    clearTimeout(detectionTimer);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    const stream = video.srcObject;
+
+    if (stream) {
+        for (const track of stream.getTracks()) {
+            track.stop();
+        }
     }
-  }
 
-  video.srcObject = null;
-  startButton.disabled = false;
-  stopButton.disabled = true;
-  statusText.textContent = "Camera is off.";
+    video.srcObject = null;
+    startButton.disabled = false;
+    stopButton.disabled = true;
+    statusText.textContent = "Camera is off.";
 }
 
 stopButton.addEventListener("click", handleStopClick);
