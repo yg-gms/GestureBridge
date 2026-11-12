@@ -1,5 +1,6 @@
 import { normalizePose } from "./features.mjs";
 import { LABELS, PoseRecorder } from "./recording.mjs";
+import { euclideanDistance, predictPose } from "./classifier.mjs";
 import {
   HandLandmarker,
   FilesetResolver,
@@ -19,6 +20,7 @@ const recorder = new PoseRecorder();
 const recordingStatus = document.getElementById("recording-status");
 const featuresStatus = document.getElementById("features-status");
 const recordingControls = document.getElementById("recording-controls");
+const recognitionStatus = document.getElementById("recognition-status");
 let latestPose = null;
 const labelNames = { next: "Next", previous: "Previous", neutral: "Neutral" };
 const recordRows = LABELS.map(label => {
@@ -51,6 +53,26 @@ function renderRecording() {
     count.textContent = `${labelNames[label]}: ${recorder.clips[label]}/3 clips, ${recorder.clips[label] * 15} examples.`;
     record.disabled = !latestPose || !video.srcObject || document.hidden || !!recorder.active || recorder.clips[label] >= 3;
     reset.disabled = !!recorder.active || recorder.clips[label] === 0;
+  }
+  renderRecognition();
+}
+
+function renderRecognition() {
+  if (euclideanDistance([0], [0]) === null) {
+    recognitionStatus.textContent = "Complete euclideanDistance in classifier.mjs to compare poses.";
+  } else if (!LABELS.every(label => recorder.clips[label] === 3)) {
+    recognitionStatus.textContent = "Record three clips for each pose to start comparing.";
+  } else if (recorder.active) {
+    recognitionStatus.textContent = "Comparison paused while recording.";
+  } else if (!latestPose || document.hidden || !video.srcObject) {
+    recognitionStatus.textContent = "Show one hand to compare it with your examples.";
+  } else {
+    const prediction = predictPose(latestPose, recorder.examples);
+    recognitionStatus.textContent = !prediction
+      ? "Could not compare this pose. Check the distance calculation."
+      : `${prediction.label ? `Closest recorded pose: ${labelNames[prediction.label]}` : "Uncertain pose"}. ` +
+        `${prediction.votes}/5 neighbours agree; average distance ${prediction.distance.toFixed(2)}. ` +
+        "Uncalibrated: unfamiliar poses may still get a label.";
   }
 }
 

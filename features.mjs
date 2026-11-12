@@ -1,7 +1,5 @@
-// YOUR TASK: point and wrist are already in pixels; scale is a positive hand size.
+
 export function normalizeCoordinates(point, wrist, scale) {
-  // Replace null with [normalized x, normalized y].
-  // For each coordinate: subtract the wrist, then divide by scale.
   return [(point.x - wrist.x) / scale, (point.y - wrist.y) / scale];
 }
 
