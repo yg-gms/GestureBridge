@@ -3,86 +3,13 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>GestureBridge</title>
+    <meta name="theme-color" content="#f8f7fb">
+    <meta name="description" content="Teach your webcam your own hand poses, then use them to control a presentation.">
+    <title>GestureBridge — Your poses. Your pace.</title>
   </head>
   <body>
-    <h1>GestureBridge</h1>
-    <p>Teach your webcam gestures to control a presentation.</p>
-
-    <div style="position: relative; width: 640px; max-width: 100%;">
-        <video id="camera-preview" autoplay muted playsinline
-            style="display: block; width: 100%;"></video>
-        <canvas id="hand-overlay" aria-hidden="true"
-            style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
-    </div>
-    <button id="start-camera" type="button">Start camera</button>
-    <button id="stop-camera" type="button" disabled>Stop camera</button>
-    <p id="status" role="status">Camera is off.</p>
-    <section aria-labelledby="teach-heading">
-      <h2 id="teach-heading">Teach your poses</h2>
-      <p>Use the same hand. Choose three distinct, comfortable poses. Record three clips per pose,
-        relaxing and slightly repositioning your hand between clips. Keep one hand visible for each full clip.</p>
-      <p id="features-status" role="status">Start the camera and show one hand to prepare recording.</p>
-      <div id="recording-controls"></div>
-      <p id="recording-status" role="status">No examples recorded.</p>
-      <p>Examples stay in this page's memory. Reloading clears them.</p>
-    </section>
-    <section aria-labelledby="calibration-heading">
-      <h2 id="calibration-heading">Calibrate</h2>
-      <p>Record fresh samples of your three poses, then two different unrelated poses.
-        These separate samples help set the distance limit for accepting a pose.</p>
-      <p id="calibration-instruction">Record all three poses first.</p>
-      <button id="capture-calibration" type="button" disabled>Capture Next (2 seconds)</button>
-      <button id="reset-calibration" type="button" disabled>Restart calibration</button>
-      <p id="calibration-status" role="status">Not calibrated yet.</p>
-      <p>Calibration checks these samples. Other unfamiliar poses may still resemble a trained pose.</p>
-    </section>
-    <section aria-labelledby="compare-heading">
-      <h2 id="compare-heading">Try your poses</h2>
-      <p>After recording, show each pose again. We compare it with your five closest examples.
-        Four must agree for a label to appear. Agreement is a vote count, not a probability.</p>
-      <p id="recognition-status" role="status">Record your poses to start comparing.</p>
-      <p>After calibration, distant poses are rejected as unfamiliar. Start gesture controls when you are ready.</p>
-    </section>
-    <section aria-labelledby="slides-heading">
-      <h2 id="slides-heading">Presentation demo</h2>
-      <p>GestureBridge controls this built-in deck. Hold Neutral for 0.4 seconds to get ready,
-        then Next or Previous for 0.5 seconds. Return to Neutral before each new command.</p>
-      <button id="toggle-controls" type="button" aria-describedby="command-status" disabled>Start gesture controls</button>
-      <p>Press Escape to pause gesture controls. Stop camera releases the webcam.</p>
-      <p id="command-status" role="status">Paused. Calibrate and start the camera to enable gesture controls.</p>
-      <label for="hold-progress">Pose hold</label>
-      <progress id="hold-progress" value="0" max="1"></progress>
-      <div id="slide-viewer" style="border: 2px solid; padding: 1.5rem; max-width: 40rem; min-height: 10rem;">
-        <article>
-          <h3>GestureBridge</h3>
-          <p>Your hand poses, your presentation controls.</p>
-        </article>
-        <article hidden>
-          <h3>Teach your poses</h3>
-          <p>Choose distinct Next, Previous and Neutral poses that are comfortable for you.</p>
-        </article>
-        <article hidden>
-          <h3>Compare with your examples</h3>
-          <p>The hand tracker finds landmarks. GestureBridge compares their shape with your recorded examples.</p>
-        </article>
-        <article hidden>
-          <h3>Calibrate with fresh poses</h3>
-          <p>Separate captures help reject poses that are too far from your examples.</p>
-        </article>
-        <article hidden>
-          <h3>Hold, then rest</h3>
-          <p>Hold a command to change one slide. Hold Neutral to prepare the next command.</p>
-        </article>
-        <article hidden>
-          <h3>Try another person's poses</h3>
-          <p>Pause, clear the examples, and teach a new set. Unfamiliar poses may still resemble trained ones.</p>
-        </article>
-      </div>
-      <p id="slide-position" role="status">Slide 1 of 6</p>
-      <button id="previous-slide" type="button" disabled>Previous slide</button>
-      <button id="next-slide" type="button">Next slide</button>
-    </section>
-    <script type="module" src="./main.js"></script>
+    <div id="root"></div>
+    <noscript>GestureBridge needs JavaScript to run the hand tracker in your browser.</noscript>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
