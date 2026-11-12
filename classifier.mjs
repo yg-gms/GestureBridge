@@ -34,3 +34,12 @@ export function predictPose(vector, examples) {
     distance: nearest.reduce((sum, example) => sum + example.distance, 0) / 5,
   };
 }
+
+export function acceptedLabel(prediction, cutoff) {
+  if (!prediction || !Number.isFinite(cutoff) || cutoff < 0 ||
+      !LABELS.includes(prediction.label) || !Number.isInteger(prediction.votes) ||
+      prediction.votes < 4 || prediction.votes > 5 ||
+      !Number.isFinite(prediction.distance) || prediction.distance < 0 ||
+      prediction.distance > cutoff) return null;
+  return prediction.label;
+}
