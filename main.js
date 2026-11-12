@@ -1,3 +1,5 @@
+import { normalizePose } from "./features.mjs";
+import { LABELS, PoseRecorder } from "./recording.mjs";
 import {
   HandLandmarker,
   FilesetResolver,
@@ -12,6 +14,57 @@ const video = document.getElementById("camera-preview");
 const stopButton = document.getElementById("stop-camera");
 const canvas = document.getElementById("hand-overlay");
 const context = canvas.getContext("2d");
+
+const recorder = new PoseRecorder();
+const recordingStatus = document.getElementById("recording-status");
+const featuresStatus = document.getElementById("features-status");
+const recordingControls = document.getElementById("recording-controls");
+let latestPose = null;
+const labelNames = { next: "Next", previous: "Previous", neutral: "Neutral" };
+const recordRows = LABELS.map(label => {
+  const row = document.createElement("p");
+  const count = document.createElement("span");
+  const record = document.createElement("button");
+  const reset = document.createElement("button");
+  record.type = reset.type = "button";
+  record.textContent = `Record ${labelNames[label]} (3 seconds)`;
+  reset.textContent = `Clear ${labelNames[label]}`;
+  record.addEventListener("click", () => {
+    if (!latestPose || !video.srcObject || document.hidden) return;
+    if (recorder.start(label, performance.now())) {
+      recordingStatus.textContent = `Recording ${labelNames[label]}: hold your pose for 3 seconds.`;
+      renderRecording();
+    }
+  });
+  reset.addEventListener("click", () => {
+    recorder.reset(label);
+    recordingStatus.textContent = `${labelNames[label]} examples cleared.`;
+    renderRecording();
+  });
+  row.append(count, " ", record, " ", reset);
+  recordingControls.append(row);
+  return { label, count, record, reset };
+});
+
+function renderRecording() {
+  for (const { label, count, record, reset } of recordRows) {
+    count.textContent = `${labelNames[label]}: ${recorder.clips[label]}/3 clips, ${recorder.clips[label] * 15} examples.`;
+    record.disabled = !latestPose || !video.srcObject || document.hidden || !!recorder.active || recorder.clips[label] >= 3;
+    reset.disabled = !!recorder.active || recorder.clips[label] === 0;
+  }
+}
+
+function cancelRecording(message) {
+  if (recorder.active) recordingStatus.textContent = `${message} Incomplete clip discarded; record it again.`;
+  recorder.cancel();
+  latestPose = null;
+  renderRecording();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) cancelRecording("Tab hidden.");
+});
+renderRecording();
 
 function drawLandmarks(landmarks) {
   canvas.width = video.videoWidth;
@@ -47,6 +100,28 @@ function detectHands() {
       const handCount = result.landmarks.length;
 
       drawLandmarks(handCount === 1 ? result.landmarks[0] : []);
+      latestPose = handCount === 1
+        ? normalizePose(result.landmarks[0], video.videoWidth, video.videoHeight)
+        : null;
+      featuresStatus.textContent = latestPose
+        ? "Pose vector ready: 42 numbers. You can record examples."
+        : handCount === 1
+          ? "Normalization not ready: complete normalizeCoordinates in features.mjs."
+          : "Show one hand to prepare a pose vector.";
+      if (!latestPose || document.hidden) {
+        cancelRecording("Tracking interrupted.");
+      } else if (recorder.active) {
+        const label = recorder.active.label;
+        const before = recorder.clips[label];
+        const remaining = Math.max(0, 3 - (performance.now() - recorder.active.start) / 1000);
+        recorder.add(latestPose, performance.now());
+        recordingStatus.textContent = recorder.active
+          ? `Recording ${labelNames[label]}: ${remaining.toFixed(1)} seconds left.`
+          : recorder.clips[label] > before
+            ? `Saved ${labelNames[label]} clip. Relax and reposition before the next clip.`
+            : "Not enough fresh samples. Please record the clip again.";
+      }
+      renderRecording();
 
       statusText.textContent =
         handCount === 0 ? "No hand detected." :
@@ -97,6 +172,9 @@ async function handleStartClick() {
 
     video.srcObject = stream;
     await video.play();
+    for (const track of stream.getVideoTracks()) {
+      track.addEventListener("ended", handleStopClick, { once: true });
+    }
 
     lastVideoTime = -1;
     detectHands();
@@ -105,6 +183,7 @@ async function handleStartClick() {
     statusText.textContent = "Camera and hand tracker are ready.";
   } catch (error) {
     console.error(error);
+    handleStopClick();
     statusText.textContent =
       "Could not start the camera or hand tracker. Please try again.";
     startButton.disabled = false;
@@ -114,6 +193,7 @@ async function handleStartClick() {
 startButton.addEventListener("click", handleStartClick);
 
 function handleStopClick() {
+    cancelRecording("Camera stopped.");
 
     clearTimeout(detectionTimer);
     context.clearRect(0, 0, canvas.width, canvas.height);

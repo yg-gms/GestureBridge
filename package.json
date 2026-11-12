@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build --base=/GestureBridge/",
-    "preview": "vite preview --base=/GestureBridge/"
+    "preview": "vite preview --base=/GestureBridge/",
+    "test": "node --test tests/*.test.mjs"
   },
   "repository": {
     "type": "git",

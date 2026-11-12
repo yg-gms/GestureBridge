@@ -18,6 +18,15 @@
     <button id="start-camera" type="button">Start camera</button>
     <button id="stop-camera" type="button" disabled>Stop camera</button>
     <p id="status" role="status">Camera is off.</p>
+    <section aria-labelledby="teach-heading">
+      <h2 id="teach-heading">Teach your poses</h2>
+      <p>Use the same hand. Choose three distinct, comfortable poses. Record three clips per pose,
+        relaxing and slightly repositioning your hand between clips. Keep one hand visible for each full clip.</p>
+      <p id="features-status" role="status">Finish normalizeCoordinates in features.mjs to enable recording.</p>
+      <div id="recording-controls"></div>
+      <p id="recording-status" role="status">No examples recorded.</p>
+      <p>Examples stay in this page's memory. Reloading clears them. Recognition comes in the next step.</p>
+    </section>
     <script type="module" src="./main.js"></script>
   </body>
 </html>
