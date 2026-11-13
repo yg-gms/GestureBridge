@@ -19,10 +19,16 @@ function Workspace() {
 
   useEffect(() => {
     session.onChange = setView;
-    const controller = createCamera({ video: videoRef.current, canvas: canvasRef.current, session });
+    const controller = createCamera({
+      video: videoRef.current,
+      canvas: canvasRef.current,
+      session,
+    });
     cameraRef.current = controller;
     const visibility = () => session.setHidden(document.hidden);
-    const keydown = event => { if (event.key === 'Escape') session.pause(); };
+    const keydown = (event) => {
+      if (event.key === 'Escape') session.pause();
+    };
     const pagehide = () => controller.stop();
     visibility();
     document.addEventListener('visibilitychange', visibility);
@@ -37,7 +43,15 @@ function Workspace() {
     };
   }, [session]);
 
-  return <App session={session} view={view} camera={camera} videoRef={videoRef} canvasRef={canvasRef} />;
+  return (
+    <App
+      session={session}
+      view={view}
+      camera={camera}
+      videoRef={videoRef}
+      canvasRef={canvasRef}
+    />
+  );
 }
 
 createRoot(document.getElementById('root')).render(<Workspace />);

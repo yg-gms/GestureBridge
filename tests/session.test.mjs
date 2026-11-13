@@ -2,19 +2,33 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GestureSession } from '../session.mjs';
 
-const poses = [0, 1, 2, 3, 4].map(pose => Array.from({ length: 21 }, (_, index) => ({
-  x: 0.2 + index * 0.005 + (index > 10 ? pose * 0.1 : 0), y: 0.2 + index * 0.01,
-})));
+const poses = [0, 1, 2, 3, 4].map((pose) =>
+  Array.from({ length: 21 }, (_, index) => ({
+    x: 0.2 + index * 0.005 + (index > 10 ? pose * 0.1 : 0),
+    y: 0.2 + index * 0.01,
+  })),
+);
 
 function fixture() {
   let now = 0;
   const session = new GestureSession({ now: () => now });
-  session.setCameraState({ running: true, loading: false, message: 'Camera ready.' });
+  session.setCameraState({
+    running: true,
+    loading: false,
+    message: 'Camera ready.',
+  });
   const frame = (pose, count = 1) => {
     now += 100;
-    session.track(Array.from({ length: count }, () => poses[pose]), 640, 480, now);
+    session.track(
+      Array.from({ length: count }, () => poses[pose]),
+      640,
+      480,
+      now,
+    );
   };
-  const hold = (pose, frames) => { for (let i = 0; i < frames; i++) frame(pose); };
+  const hold = (pose, frames) => {
+    for (let i = 0; i < frames; i++) frame(pose);
+  };
   const train = () => {
     for (let pose = 0; pose < 3; pose++) {
       for (let clip = 0; clip < 3; clip++) {
@@ -39,7 +53,11 @@ test('setup exposes only reachable stages and guides each label into calibration
   assert.equal(session.goToStep('present'), false);
   assert.equal(session.goToStep('calibrate'), false);
   train();
-  assert.deepEqual(session.snapshot().clips, { next: 3, previous: 3, neutral: 3 });
+  assert.deepEqual(session.snapshot().clips, {
+    next: 3,
+    previous: 3,
+    neutral: 3,
+  });
   assert.equal(session.snapshot().step, 'calibrate');
   assert.equal(session.snapshot().controls.enabled, false);
 });
@@ -47,14 +65,41 @@ test('setup exposes only reachable stages and guides each label into calibration
 test('choosing another pose keeps it selected until its three clips are recorded', () => {
   const { session, frame, hold } = fixture();
   session.selectLabel('neutral');
-  frame(2); session.record(); hold(2, 31);
+  frame(2);
+  session.record();
+  hold(2, 31);
   assert.equal(session.snapshot().selectedLabel, 'neutral');
   assert.equal(session.snapshot().clips.neutral, 1);
 });
 
+test('recording reports a removed accidental pose without adding it to training', () => {
+  const { session, frame } = fixture();
+  frame(0);
+  session.record();
+  for (let index = 1; index <= 31; index++) frame(index === 6 ? 1 : 0);
+  assert.equal(session.snapshot().clips.next, 1);
+  assert.match(session.snapshot().message, /ignored 1 unusual sample/i);
+  assert.equal(session.recorder.examples.length, 14);
+});
+
+test('a mixed recording requests a retake without losing saved progress', () => {
+  const { session, frame, hold } = fixture();
+  frame(0);
+  session.record();
+  hold(0, 31);
+  session.record();
+  for (let index = 1; index <= 31; index++) frame(index <= 14 ? 1 : 0);
+  assert.equal(session.snapshot().clips.next, 1);
+  assert.match(session.snapshot().message, /pose changed too much/i);
+  assert.equal(session.snapshot().step, 'teach');
+  assert.equal(session.snapshot().busy, false);
+  assert.equal(session.recorder.examples.length, 15);
+});
+
 test('successful fresh calibration opens presentation paused and enables its start button', () => {
   const { session, train, calibrate } = fixture();
-  train(); calibrate();
+  train();
+  calibrate();
   const view = session.snapshot();
   assert.equal(view.step, 'present');
   assert.equal(view.calibration.count, 5);
@@ -67,7 +112,8 @@ test('successful fresh calibration opens presentation paused and enables its sta
 
 test('overlap stays in calibration with an actionable failure instead of unlocking presentation', () => {
   const { session, train, calibrate } = fixture();
-  train(); calibrate([0, 1, 2, 0, 1]);
+  train();
+  calibrate([0, 1, 2, 0, 1]);
   assert.equal(session.snapshot().step, 'calibrate');
   assert.match(session.snapshot().message, /overlap/i);
   assert.equal(session.goToStep('present'), false);
@@ -78,31 +124,42 @@ test('overlap stays in calibration with an actionable failure instead of unlocki
 
 test('tracked Neutral and commands move one slide until Neutral rearms', () => {
   const { session, hold, train, calibrate } = fixture();
-  train(); calibrate(); session.toggleControls();
+  train();
+  calibrate();
+  session.toggleControls();
   hold(0, 10);
   assert.equal(session.snapshot().slideIndex, 0);
-  hold(2, 5); hold(0, 15);
+  hold(2, 5);
+  hold(0, 15);
   assert.equal(session.snapshot().slideIndex, 1);
-  hold(2, 5); hold(1, 6);
+  hold(2, 5);
+  hold(1, 6);
   assert.equal(session.snapshot().slideIndex, 0);
 });
 
 test('leaving presentation pauses without deleting the trained profile', () => {
   const { session, hold, train, calibrate } = fixture();
-  train(); calibrate(); session.toggleControls(); hold(2, 5);
+  train();
+  calibrate();
+  session.toggleControls();
+  hold(2, 5);
   assert.equal(session.snapshot().controls.started, true);
   assert.equal(session.goToStep('teach'), true);
   hold(0, 10);
   assert.equal(session.snapshot().slideIndex, 0);
   assert.equal(session.snapshot().controls.paused, true);
   assert.equal(session.snapshot().calibration.ready, true);
-  session.goToStep('present'); session.toggleControls(); hold(0, 10);
+  session.goToStep('present');
+  session.toggleControls();
+  hold(0, 10);
   assert.equal(session.snapshot().slideIndex, 0);
 });
 
 test('retaking one label invalidates calibration while preserving the other labels', () => {
   const { session, train, calibrate } = fixture();
-  train(); calibrate(); session.resetLabel('previous');
+  train();
+  calibrate();
+  session.resetLabel('previous');
   const view = session.snapshot();
   assert.equal(view.step, 'teach');
   assert.equal(view.selectedLabel, 'previous');
@@ -113,8 +170,12 @@ test('retaking one label invalidates calibration while preserving the other labe
 
 test('tracking interruptions discard only the unfinished capture', () => {
   const { session, frame, hold } = fixture();
-  frame(0); session.record(); hold(0, 31);
-  session.record(); hold(0, 5); frame(0, 2);
+  frame(0);
+  session.record();
+  hold(0, 31);
+  session.record();
+  hold(0, 5);
+  frame(0, 2);
   assert.equal(session.snapshot().clips.next, 1);
   assert.equal(session.snapshot().busy, false);
   assert.equal(session.snapshot().hand.ready, false);
@@ -124,23 +185,44 @@ test('tracking interruptions discard only the unfinished capture', () => {
 test('hidden tab and camera stop pause controls and require Neutral on resume', () => {
   for (const interruption of ['hidden', 'camera']) {
     const { session, hold, train, calibrate } = fixture();
-    train(); calibrate(); session.toggleControls(); hold(2, 5); hold(0, 4);
-    if (interruption === 'hidden') { session.setHidden(true); session.setHidden(false); }
-    else session.setCameraState({ running: false, loading: false, message: 'Camera off.' });
+    train();
+    calibrate();
+    session.toggleControls();
+    hold(2, 5);
+    hold(0, 4);
+    if (interruption === 'hidden') {
+      session.setHidden(true);
+      session.setHidden(false);
+    } else
+      session.setCameraState({
+        running: false,
+        loading: false,
+        message: 'Camera off.',
+      });
     assert.equal(session.snapshot().controls.paused, true);
     if (interruption === 'camera') {
       assert.equal(session.snapshot().controls.enabled, false);
-      session.setCameraState({ running: true, loading: false, message: 'Camera ready.' });
+      session.setCameraState({
+        running: true,
+        loading: false,
+        message: 'Camera ready.',
+      });
     }
-    session.toggleControls(); hold(0, 10);
+    session.toggleControls();
+    hold(0, 10);
     assert.equal(session.snapshot().slideIndex, 0);
   }
 });
 
 test('pause cancels pending holds and manual navigation remains bounded', () => {
   const { session, hold, train, calibrate } = fixture();
-  train(); calibrate(); session.toggleControls(); hold(2, 5); hold(0, 4);
-  session.pause(); hold(0, 10);
+  train();
+  calibrate();
+  session.toggleControls();
+  hold(2, 5);
+  hold(0, 4);
+  session.pause();
+  hold(0, 10);
   assert.equal(session.snapshot().slideIndex, 0);
   for (let i = 0; i < 10; i++) session.changeSlide('next');
   assert.equal(session.snapshot().slideIndex, 5);

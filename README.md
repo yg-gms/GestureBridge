@@ -4,6 +4,7 @@ Learn custom hand poses to control the built-in six-slide presentation demo.
 
 Run `npm install` once, then `npm run dev` and open the local URL. Run `npm test`
 for automated checks and `npm run build` for the production bundle.
+Use `npm run format` to format the project and `npm run format:check` to check it.
 
 1. In **Teach**, start the camera and record three clips for each pose. The app
    guides Next, Previous and Neutral one at a time, then opens calibration.
@@ -25,6 +26,15 @@ retake one pose; this preserves the others and requires fresh calibration.
 
 The interface uses React and shadcn/ui with Base UI. The normalization, recording,
 classifier, calibration and command gate remain separate JavaScript modules.
+
+Recording now checks each clip before saving it. It keeps the consistent samples
+and reports how many unusual samples were ignored. If fewer than 12 of the 15
+samples remain, it asks you to record that clip again and keeps earlier clips.
+The filter uses a representative recorded pose and median-based spread; its
+initial settings still need physical testing. A consistently wrong pose cannot
+be identified from recording consistency alone.
+
+See the [project guide](docs/README.md) for the file map and filtering details.
 
 Examples and calibration stay in page memory; reload clears them. This prototype
 controls its own viewer. Unfamiliar poses can still resemble recorded ones.

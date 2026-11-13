@@ -27,7 +27,10 @@ test('each command fires at 500 ms, once, and requires Neutral before another', 
     assert.deepEqual(hold(gate, label, 500, 400), []);
     assert.equal(gate.update(label, 1000), label);
     assert.deepEqual(hold(gate, label, 1100, 1000), []);
-    assert.deepEqual(hold(gate, label === 'next' ? 'previous' : 'next', 2200, 600), []);
+    assert.deepEqual(
+      hold(gate, label === 'next' ? 'previous' : 'next', 2200, 600),
+      [],
+    );
     hold(gate, 'neutral', 2900, 400);
     assert.deepEqual(hold(gate, label, 3400, 500), [label]);
   }

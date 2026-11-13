@@ -1,33 +1,82 @@
-import { LABELS } from './recording.mjs';
+import { LABELS } from './labels.mjs';
 import { predictPose } from './classifier.mjs';
 
 export const CALIBRATION_STEPS = [
   { label: 'next', name: 'Next', instruction: 'Show your trained Next pose.' },
-  { label: 'previous', name: 'Previous', instruction: 'Show your trained Previous pose.' },
-  { label: 'neutral', name: 'Neutral', instruction: 'Show your trained Neutral pose.' },
-  { label: null, name: 'Unrelated pose 1', instruction: 'Show a different pose that you did not train.' },
-  { label: null, name: 'Unrelated pose 2', instruction: 'Show another unrelated pose, different from the first.' },
+  {
+    label: 'previous',
+    name: 'Previous',
+    instruction: 'Show your trained Previous pose.',
+  },
+  {
+    label: 'neutral',
+    name: 'Neutral',
+    instruction: 'Show your trained Neutral pose.',
+  },
+  {
+    label: null,
+    name: 'Unrelated pose 1',
+    instruction: 'Show a different pose that you did not train.',
+  },
+  {
+    label: null,
+    name: 'Unrelated pose 2',
+    instruction: 'Show another unrelated pose, different from the first.',
+  },
 ];
 
 function percentile(values, fraction) {
   const sorted = [...values].sort((a, b) => a - b);
   const index = (sorted.length - 1) * fraction;
   const lower = Math.floor(index);
-  return sorted[lower] + (sorted[Math.ceil(index)] - sorted[lower]) * (index - lower);
+  return (
+    sorted[lower] + (sorted[Math.ceil(index)] - sorted[lower]) * (index - lower)
+  );
 }
 
 export function calibrationCutoff(captures) {
-  if (!Array.isArray(captures) || captures.length !== 5 ||
-      !captures.every(clip => Array.isArray(clip) && clip.length === 10 &&
-        clip.every(sample => sample && Number.isFinite(sample.distance) && sample.distance >= 0))) {
+  if (
+    !Array.isArray(captures) ||
+    captures.length !== 5 ||
+    !captures.every(
+      (clip) =>
+        Array.isArray(clip) &&
+        clip.length === 10 &&
+        clip.every(
+          (sample) =>
+            sample && Number.isFinite(sample.distance) && sample.distance >= 0,
+        ),
+    )
+  ) {
     return { cutoff: null, reason: 'incomplete' };
   }
-  if (!LABELS.every((label, index) => captures[index].every(sample =>
-    sample.label === label && Number.isInteger(sample.votes) && sample.votes >= 4 && sample.votes <= 5))) {
+  if (
+    !LABELS.every((label, index) =>
+      captures[index].every(
+        (sample) =>
+          sample.label === label &&
+          Number.isInteger(sample.votes) &&
+          sample.votes >= 4 &&
+          sample.votes <= 5,
+      ),
+    )
+  ) {
     return { cutoff: null, reason: 'known-poses' };
   }
-  const knownLimit = percentile(captures.slice(0, 3).flat().map(sample => sample.distance), 0.95);
-  const unrelatedLimit = percentile(captures.slice(3).flat().map(sample => sample.distance), 0.05);
+  const knownLimit = percentile(
+    captures
+      .slice(0, 3)
+      .flat()
+      .map((sample) => sample.distance),
+    0.95,
+  );
+  const unrelatedLimit = percentile(
+    captures
+      .slice(3)
+      .flat()
+      .map((sample) => sample.distance),
+    0.05,
+  );
   if (unrelatedLimit <= knownLimit) return { cutoff: null, reason: 'overlap' };
   return { cutoff: (knownLimit + unrelatedLimit) / 2, reason: null };
 }
@@ -59,15 +108,20 @@ export class CalibrationSession {
       this.result = calibrationCutoff(this.captures);
       return this.result.cutoff === null ? 'failed' : 'complete';
     }
-    if (now - clip.start >= clip.samples.length * 200 &&
-        now - clip.last >= 100 && clip.samples.length < 10) {
+    if (
+      now - clip.start >= clip.samples.length * 200 &&
+      now - clip.last >= 100 &&
+      clip.samples.length < 10
+    ) {
       clip.samples.push(prediction);
       clip.last = now;
     }
     return null;
   }
 
-  cancel() { this.active = null; }
+  cancel() {
+    this.active = null;
+  }
 
   reset() {
     this.cancel();

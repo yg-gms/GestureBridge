@@ -5,12 +5,19 @@ async function loadHandModel() {
   const vision = await FilesetResolver.forVisionTasks(`${base}mediapipe/wasm`);
   return HandLandmarker.createFromOptions(vision, {
     baseOptions: { modelAssetPath: `${base}mediapipe/hand_landmarker.task` },
-    runningMode: 'VIDEO', numHands: 2,
+    runningMode: 'VIDEO',
+    numHands: 2,
   });
 }
 
-export function createCamera({ video, canvas, session, loadModel = loadHandModel,
-  getUserMedia = constraints => navigator.mediaDevices.getUserMedia(constraints) }) {
+export function createCamera({
+  video,
+  canvas,
+  session,
+  loadModel = loadHandModel,
+  getUserMedia = (constraints) =>
+    navigator.mediaDevices.getUserMedia(constraints),
+}) {
   const context = canvas.getContext('2d');
   let model = null;
   let modelRequest = null;
@@ -27,7 +34,11 @@ export function createCamera({ video, canvas, session, loadModel = loadHandModel
     for (const track of video.srcObject?.getTracks() ?? []) track.stop();
     video.srcObject = null;
     context.clearRect(0, 0, canvas.width, canvas.height);
-    session.setCameraState({ running: false, loading: false, message: 'Camera off.' });
+    session.setCameraState({
+      running: false,
+      loading: false,
+      message: 'Camera off.',
+    });
   }
 
   function detect() {
@@ -42,7 +53,13 @@ export function createCamera({ video, canvas, session, loadModel = loadHandModel
         if (result.landmarks.length === 1) {
           for (const point of result.landmarks[0]) {
             context.beginPath();
-            context.arc(point.x * canvas.width, point.y * canvas.height, 4, 0, Math.PI * 2);
+            context.arc(
+              point.x * canvas.width,
+              point.y * canvas.height,
+              4,
+              0,
+              Math.PI * 2,
+            );
             context.fill();
           }
         }
@@ -50,7 +67,9 @@ export function createCamera({ video, canvas, session, loadModel = loadHandModel
       }
     } catch {
       stop();
-      session.setCameraState({ message: 'Hand tracking failed. Restart the camera to try again.' });
+      session.setCameraState({
+        message: 'Hand tracking failed. Restart the camera to try again.',
+      });
       return;
     }
     timer = setTimeout(detect, 100);
@@ -60,13 +79,26 @@ export function createCamera({ video, canvas, session, loadModel = loadHandModel
     if (disposed || loading || video.srcObject) return false;
     const request = ++generation;
     loading = true;
-    session.setCameraState({ running: false, loading: true, message: 'Loading hand tracker…' });
+    session.setCameraState({
+      running: false,
+      loading: true,
+      message: 'Loading hand tracker…',
+    });
     try {
       if (!model) {
-        modelRequest ??= loadModel().then(loaded => {
-          if (disposed) { loaded.close(); return; }
-          model = loaded;
-        }, error => { modelRequest = null; throw error; });
+        modelRequest ??= loadModel().then(
+          (loaded) => {
+            if (disposed) {
+              loaded.close();
+              return;
+            }
+            model = loaded;
+          },
+          (error) => {
+            modelRequest = null;
+            throw error;
+          },
+        );
         await modelRequest;
       }
       if (request !== generation) return false;
@@ -80,21 +112,32 @@ export function createCamera({ video, canvas, session, loadModel = loadHandModel
       await video.play();
       if (request !== generation) return false;
       for (const track of stream.getVideoTracks()) {
-        track.addEventListener('ended', () => {
-          if (video.srcObject === stream) stop();
-        }, { once: true });
+        track.addEventListener(
+          'ended',
+          () => {
+            if (video.srcObject === stream) stop();
+          },
+          { once: true },
+        );
       }
       loading = false;
       lastVideoTime = -1;
-      session.setCameraState({ running: true, loading: false, message: 'Camera ready.' });
+      session.setCameraState({
+        running: true,
+        loading: false,
+        message: 'Camera ready.',
+      });
       detect();
       return true;
     } catch (error) {
       if (request !== generation) return false;
       stop();
-      session.setCameraState({ message: error.name === 'NotAllowedError'
-        ? 'Camera access denied. Allow it in your browser, then try again.'
-        : 'Could not start the camera or hand tracker. Please try again.' });
+      session.setCameraState({
+        message:
+          error.name === 'NotAllowedError'
+            ? 'Camera access denied. Allow it in your browser, then try again.'
+            : 'Could not start the camera or hand tracker. Please try again.',
+      });
       return false;
     }
   }

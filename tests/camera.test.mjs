@@ -5,19 +5,36 @@ import { GestureSession } from '../session.mjs';
 
 const deferred = () => {
   let resolve;
-  const promise = new Promise(done => { resolve = done; });
+  const promise = new Promise((done) => {
+    resolve = done;
+  });
   return { promise, resolve };
 };
 
 function fixture(overrides = {}) {
   let stopped = 0;
-  const track = { stop() { stopped++; }, addEventListener() {} };
+  const track = {
+    stop() {
+      stopped++;
+    },
+    addEventListener() {},
+  };
   const stream = { getTracks: () => [track], getVideoTracks: () => [track] };
   const video = { srcObject: null, readyState: 0, play: async () => {} };
-  const canvas = { width: 0, height: 0, getContext: () => ({ clearRect() {} }) };
+  const canvas = {
+    width: 0,
+    height: 0,
+    getContext: () => ({ clearRect() {} }),
+  };
   const session = new GestureSession();
-  const camera = createCamera({ video, canvas, session,
-    loadModel: async () => ({ close() {} }), getUserMedia: async () => stream, ...overrides });
+  const camera = createCamera({
+    video,
+    canvas,
+    session,
+    loadModel: async () => ({ close() {} }),
+    getUserMedia: async () => stream,
+    ...overrides,
+  });
   return { camera, session, video, stream, stopped: () => stopped };
 }
 
@@ -36,8 +53,13 @@ test('camera requests video only and stopping releases all media tracks', async 
 test('stopping during model loading prevents a late camera request', async () => {
   const model = deferred();
   let requests = 0;
-  const { camera, session } = fixture({ loadModel: () => model.promise,
-    getUserMedia: async () => { requests++; throw new Error('should not request'); } });
+  const { camera, session } = fixture({
+    loadModel: () => model.promise,
+    getUserMedia: async () => {
+      requests++;
+      throw new Error('should not request');
+    },
+  });
   const start = camera.start();
   camera.stop();
   model.resolve({ close() {} });
@@ -49,7 +71,12 @@ test('stopping during model loading prevents a late camera request', async () =>
 test('an immediate stop and restart shares one pending model load', async () => {
   const model = deferred();
   let loads = 0;
-  const { camera } = fixture({ loadModel: () => { loads++; return model.promise; } });
+  const { camera } = fixture({
+    loadModel: () => {
+      loads++;
+      return model.promise;
+    },
+  });
   const first = camera.start();
   camera.stop();
   const second = camera.start();
@@ -63,7 +90,12 @@ test('an immediate stop and restart shares one pending model load', async () => 
 test('stopping while camera access is pending releases a late stream', async () => {
   const media = deferred();
   const requested = deferred();
-  const { camera, video, stream, stopped } = fixture({ getUserMedia: () => { requested.resolve(); return media.promise; } });
+  const { camera, video, stream, stopped } = fixture({
+    getUserMedia: () => {
+      requested.resolve();
+      return media.promise;
+    },
+  });
   const start = camera.start();
   await requested.promise;
   camera.stop();
@@ -75,7 +107,9 @@ test('stopping while camera access is pending releases a late stream', async () 
 
 test('camera playback failure releases its stream and permits retry', async () => {
   const { camera, video, stopped, session } = fixture();
-  video.play = async () => { throw new Error('playback failed'); };
+  video.play = async () => {
+    throw new Error('playback failed');
+  };
   assert.equal(await camera.start(), false);
   assert.equal(stopped(), 1);
   assert.equal(session.snapshot().camera.loading, false);
