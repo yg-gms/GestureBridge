@@ -9,7 +9,7 @@ Start with the root [README](../README.md) for running and using GestureBridge.
 | `src/components/ui/` | Generated shadcn components; keep their standard APIs     |
 | `session.mjs`        | Coordinates setup, progress, messages and slide controls  |
 | `camera.mjs`         | Camera access, model loading, landmarks and cleanup       |
-| `features.mjs`       | Converts landmarks into position/size-normalized vectors  |
+| `features.mjs`       | Normalizes hand position, size and sideways rotation      |
 | `labels.mjs`         | Shared names for Next, Previous and Neutral               |
 | `recording.mjs`      | Collects three separate clips for each pose               |
 | `classifier.mjs`     | Measures distances and compares the five closest examples |
@@ -19,6 +19,20 @@ Start with the root [README](../README.md) for running and using GestureBridge.
 
 Earlier plans and checkpoints are in [archive/](archive/). They describe their
 session's state; they are not the current implementation checklist.
+
+## Hand tilt
+
+Feature vectors remain 42 numbers. After wrist-relative position and scale
+normalization, rotate the points so the wrist-to-middle-knuckle direction is
+upright. The user's `normalizeCoordinates` calculation is unchanged. Finger-shape
+differences remain; rotating the whole shape within the camera image is ignored.
+Tests cover ±20° and ±30° rotations in pixel coordinates on a non-square image and
+classification of the rotated shape. Existing position/scale tests still pass.
+
+This does not correct 3D foreshortening, occlusion or landmark-estimation errors
+when turning the palm toward/away from the camera. Physical tilt tolerance still
+needs a fresh recording/calibration trial. No old examples should be reused after
+the feature representation changes; reload the memory-only session first.
 
 ## How training cleanup works
 

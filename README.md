@@ -27,6 +27,12 @@ retake one pose; this preserves the others and requires fresh calibration.
 The interface uses React and shadcn/ui with Base UI. The normalization, recording,
 classifier, calibration and command gate remain separate JavaScript modules.
 
+Sideways hand tilt is normalized using the direction from the wrist to the middle
+knuckle. Choose different finger shapes for your commands; angle alone will not
+distinguish them. Turning your palm toward or away from the camera can still
+change its visible shape. Refresh, re-record and recalibrate after a change to
+normalization.
+
 Recording now checks each clip before saving it. It keeps the consistent samples
 and reports how many unusual samples were ignored. If fewer than 12 of the 15
 samples remain, it asks you to record that clip again and keeps earlier clips.

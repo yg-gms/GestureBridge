@@ -21,8 +21,10 @@ export function normalizePose(landmarks, width, height) {
   const scale = Math.hypot(middleBase.x - wrist.x, middleBase.y - wrist.y);
   if (scale < 0.000001) return null;
 
-  const vector = [];
-  for (const point of points) {
+  const axisX = (middleBase.x - wrist.x) / scale;
+  const axisY = (middleBase.y - wrist.y) / scale;
+  const vector = [0, 0];
+  for (const point of points.slice(1)) {
     const pair = normalizeCoordinates(point, wrist, scale);
     if (
       !Array.isArray(pair) ||
@@ -30,7 +32,11 @@ export function normalizePose(landmarks, width, height) {
       !pair.every(Number.isFinite)
     )
       return null;
-    vector.push(...pair);
+    // Align the palm direction upright while preserving the finger shape.
+    vector.push(
+      -pair[0] * axisY + pair[1] * axisX,
+      -pair[0] * axisX - pair[1] * axisY,
+    );
   }
   return vector;
 }
