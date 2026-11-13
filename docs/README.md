@@ -2,20 +2,24 @@
 
 Start with the root [README](../README.md) for running and using GestureBridge.
 
-| File                 | Responsibility                                            |
-| -------------------- | --------------------------------------------------------- |
-| `src/main.jsx`       | Starts React and connects the camera and session          |
-| `src/App.jsx`        | Guided Teach, Calibrate and Present interface             |
-| `src/components/ui/` | Generated shadcn components; keep their standard APIs     |
-| `session.mjs`        | Coordinates setup, progress, messages and slide controls  |
-| `camera.mjs`         | Camera access, model loading, landmarks and cleanup       |
-| `features.mjs`       | Normalizes hand position, size and sideways rotation      |
-| `labels.mjs`         | Shared names for Next, Previous and Neutral               |
-| `recording.mjs`      | Collects three separate clips for each pose               |
-| `classifier.mjs`     | Measures distances and compares the five closest examples |
-| `calibration.mjs`    | Sets a rejection limit from fresh known/unrelated poses   |
-| `commands.mjs`       | Hold once, rest to rearm, and interruption rules          |
-| `tests/`             | Numerical, camera, workflow and rendered-component checks |
+| File                           | Responsibility                                            |
+| ------------------------------ | --------------------------------------------------------- |
+| `src/main.jsx`                 | Starts React and connects the camera and session          |
+| `src/App.jsx`                  | Guided Teach, Calibrate and Present interface             |
+| `src/components/ui/`           | Generated shadcn components; keep their standard APIs     |
+| `session.mjs`                  | Coordinates setup, progress, messages and slide controls  |
+| `camera.mjs`                   | Camera access, model loading, landmarks and cleanup       |
+| `features.mjs`                 | Normalizes hand position, size and sideways rotation      |
+| `labels.mjs`                   | Shared names for Next, Previous and Neutral               |
+| `recording.mjs`                | Collects three separate clips for each pose               |
+| `classifier.mjs`               | Measures distances and compares the five closest examples |
+| `calibration.mjs`              | Sets a rejection limit from fresh known/unrelated poses   |
+| `commands.mjs`                 | Hold once, rest to rearm, and interruption rules          |
+| `extension/main.jsx`           | Extension workspace, local setup and camera lifecycle     |
+| `extension/gesture-slides.mjs` | Connects gated gestures and Slides pause state            |
+| `extension/training-store.mjs` | Saves/restores versioned training locally                 |
+| `extension/slides.mjs`         | Binds one Slides tab and verifies navigation              |
+| `tests/`                       | Numerical, camera, workflow and rendered-component checks |
 
 Earlier plans and checkpoints are in [archive/](archive/). They describe their
 session's state; they are not the current implementation checklist.
@@ -32,7 +36,8 @@ classification of the rotated shape. Existing position/scale tests still pass.
 This does not correct 3D foreshortening, occlusion or landmark-estimation errors
 when turning the palm toward/away from the camera. Physical tilt tolerance still
 needs a fresh recording/calibration trial. No old examples should be reused after
-the feature representation changes; reload the memory-only session first.
+the feature representation changes. The extension validates the saved feature
+version on restore; reset saved training after changing that representation.
 
 ## How training cleanup works
 

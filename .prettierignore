@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-extension/
+releases/
 public/
 package-lock.json
 src/components/ui/

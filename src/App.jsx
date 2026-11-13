@@ -406,7 +406,16 @@ function Present({ session, view }) {
   );
 }
 
-export default function App({ session, view, camera, videoRef, canvasRef }) {
+export default function App({
+  session,
+  view,
+  camera,
+  videoRef,
+  canvasRef,
+  presentation = null,
+  footer = null,
+  helpTarget = 'This controls the built-in deck.',
+}) {
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -545,13 +554,13 @@ export default function App({ session, view, camera, videoRef, canvasRef }) {
               <Calibrate session={session} view={view} />
             </TabsContent>
             <TabsContent value="present">
-              <Present session={session} view={view} />
+              {presentation ?? <Present session={session} view={view} />}
             </TabsContent>
           </div>
         </main>
       </Tabs>
       <footer className="workspace-footer">
-        <span>Session only · reloading clears your poses.</span>
+        {footer ?? <span>Session only · reloading clears your poses.</span>}
         <Collapsible className="help-panel">
           <CollapsibleTrigger render={<Button variant="ghost" size="sm" />}>
             <CircleHelp data-icon="inline-start" />
@@ -571,7 +580,7 @@ export default function App({ session, view, camera, videoRef, canvasRef }) {
               <p>
                 Hold Neutral for 0.4 seconds, then a command for 0.5 seconds.
                 Return to Neutral before every new command. Press <kbd>Esc</kbd>{' '}
-                to pause. This controls the built-in deck.
+                to pause. {helpTarget}
               </p>
             </div>
             <div>

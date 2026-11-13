@@ -1,0 +1,129 @@
+.extension-workspace .app-shell {
+  padding: 12px;
+}
+.extension-workspace .app-header {
+  padding-bottom: 10px;
+  gap: 8px;
+}
+.extension-workspace .brand-subtitle,
+.extension-workspace .workspace-heading > div:first-child,
+.extension-workspace .camera-card [data-slot='card-description'],
+.extension-workspace .camera-note {
+  display: none;
+}
+.extension-workspace .brand {
+  font-size: 16px;
+}
+.extension-workspace .brand-mark {
+  width: 28px;
+  height: 28px;
+}
+.extension-workspace .workspace-heading {
+  padding-top: 10px;
+}
+.extension-workspace .workspace-tabs {
+  gap: 10px;
+}
+.extension-workspace .stage-navigation {
+  width: 100%;
+  gap: 2px;
+}
+.extension-workspace .stage-navigation [data-slot='tabs-trigger'] {
+  min-width: 0;
+  flex: 1;
+  font-size: 11px;
+  gap: 4px;
+}
+.extension-workspace .workspace-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+.extension-workspace .camera-card,
+.extension-workspace .task-card {
+  --card-spacing: 14px;
+  gap: 10px;
+  height: auto;
+}
+.extension-workspace .camera-content {
+  gap: 6px;
+}
+.extension-workspace .camera-viewport {
+  aspect-ratio: 16 / 8;
+  max-height: 180px;
+}
+.extension-workspace .camera-empty {
+  padding: 10px;
+  gap: 4px;
+}
+.extension-workspace .camera-empty [data-slot='empty-media'],
+.extension-workspace .camera-empty [data-slot='empty-description'] {
+  display: none;
+}
+.extension-workspace .camera-actions {
+  padding-block: 8px;
+}
+.extension-workspace .task-content {
+  gap: 12px;
+}
+.extension-workspace .pose-focus {
+  padding-block: 4px;
+  gap: 10px;
+}
+.extension-workspace .pose-focus h2 {
+  font-size: 19px;
+}
+.extension-workspace .pose-symbol {
+  width: 38px;
+  height: 38px;
+}
+.extension-workspace .pose-selector {
+  width: 100%;
+}
+.extension-workspace .pose-selector > button {
+  min-width: 0;
+  flex: 1;
+  padding-inline: 6px;
+  gap: 5px;
+}
+.extension-workspace .task-actions {
+  flex-wrap: wrap;
+}
+.extension-workspace .workspace-footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding-top: 10px;
+}
+.extension-workspace .help-content {
+  grid-template-columns: minmax(0, 1fr);
+}
+.extension-workspace .presentation-feedback .meta-row {
+  align-items: start;
+  flex-wrap: wrap;
+}
+.extension-workspace .presentation-feedback .meta-row > span {
+  max-width: 100%;
+}
+.extension-workspace [data-slot='card-description'] {
+  overflow-wrap: anywhere;
+}
+.extension-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.extension-button-row > button {
+  flex: 1;
+}
+.extension-saved {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.camera-setup {
+  max-width: 34rem;
+  margin: 4rem auto;
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+}

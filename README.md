@@ -42,5 +42,13 @@ be identified from recording consistency alone.
 
 See the [project guide](docs/README.md) for the file map and filtering details.
 
-Examples and calibration stay in page memory; reload clears them. This prototype
-controls its own viewer. Unfamiliar poses can still resemble recorded ones.
+For the Google Slides extension beta, run `npm run build:extension`.
+Load `dist-extension/` through Chrome's **Load unpacked** action or unzip
+`releases/gesturebridge-slides-0.2.0.zip` and load that folder. Follow the
+[setup and acceptance check](extension/README.md). Teach poses, calibrate, and
+connect the real Slides deck. The extension saves one set of poses locally;
+reopening requires fresh calibration and explicit start. Keep its panel visible.
+
+The public web demo keeps examples/calibration in memory and controls its own
+viewer; reloading clears that demo session. Unfamiliar poses can still resemble
+recorded ones in either version.

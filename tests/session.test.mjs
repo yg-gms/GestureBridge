@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GestureSession } from '../session.mjs';
+import { GestureSlides } from '../extension/gesture-slides.mjs';
 
 const poses = [0, 1, 2, 3, 4].map((pose) =>
   Array.from({ length: 21 }, (_, index) => ({
@@ -228,4 +229,211 @@ test('pause cancels pending holds and manual navigation remains bounded', () => 
   assert.equal(session.snapshot().slideIndex, 5);
   for (let i = 0; i < 10; i++) session.changeSlide('previous');
   assert.equal(session.snapshot().slideIndex, 0);
+});
+
+test('an external command adapter receives gated commands without moving the demo deck', () => {
+  const { session, hold, train, calibrate } = fixture();
+  const commands = [];
+  session.onCommand = (command) => commands.push(command);
+  train();
+  calibrate();
+  session.toggleControls();
+  hold(0, 10);
+  assert.deepEqual(commands, []);
+  hold(2, 5);
+  hold(0, 15);
+  hold(2, 5);
+  hold(1, 10);
+  assert.deepEqual(commands, ['next', 'previous']);
+  assert.equal(session.slideIndex, 0);
+});
+
+test('saved training restores copied poses with fresh calibration and disarmed controls', () => {
+  const { session, train, calibrate } = fixture();
+  train();
+  calibrate();
+  session.toggleControls();
+  const saved = session.exportTraining();
+  const restored = new GestureSession();
+  assert.equal(restored.restoreTraining(saved), true);
+  assert.equal(restored.trained, true);
+  assert.equal(restored.step, 'calibrate');
+  assert.equal(restored.calibrated, false);
+  assert.equal(restored.paused, true);
+  assert.equal(restored.gate.armed, false);
+  assert.equal(restored.camera.running, false);
+  saved.examples[0].vector[0] = 99;
+  assert.equal(restored.recorder.examples[0].vector[0], 0);
+  assert.equal('calibration' in saved, false);
+});
+
+test('invalid or incompatible saved training never replaces current examples', () => {
+  const { session, train } = fixture();
+  train();
+  const valid = session.exportTraining();
+  for (const corrupt of [
+    null,
+    { ...valid, version: 0 },
+    { ...valid, features: 'older-normalization' },
+    { ...valid, examples: valid.examples.slice(0, 1) },
+    { ...valid, clips: { ...valid.clips, next: 4 } },
+    {
+      ...valid,
+      examples: [{ label: 'next', vector: Array(42).fill(Infinity) }],
+    },
+  ]) {
+    assert.equal(session.restoreTraining(corrupt), false);
+    assert.deepEqual(session.exportTraining(), valid);
+  }
+});
+
+test('only completed training changes trigger saving, including retake and reset', () => {
+  const { session, frame, hold } = fixture();
+  let changes = 0;
+  session.onTrainingChange = () => changes++;
+  frame(0);
+  session.record();
+  hold(0, 5);
+  assert.equal(changes, 0);
+  hold(0, 26);
+  assert.equal(changes, 1);
+  session.resetLabel('next');
+  assert.equal(changes, 2);
+  session.resetTraining();
+  assert.equal(changes, 3);
+  assert.equal(session.recorder.examples.length, 0);
+  assert.equal(session.calibrated, false);
+  assert.equal(session.paused, true);
+});
+
+function connectedSlides() {
+  return {
+    state: { connected: true, paused: true, busy: false, message: '' },
+    onChange: () => {},
+    sent: [],
+    pause(message = 'Paused') {
+      this.state.paused = true;
+      this.state.message = message;
+      this.onChange(this.state);
+    },
+    async resume() {
+      this.state.paused = false;
+      this.onChange(this.state);
+      return true;
+    },
+    async navigate(command) {
+      this.sent.push(command);
+      return true;
+    },
+  };
+}
+
+test('trained gestures control the external deck once and target loss cancels a pending hold', async () => {
+  const { session, hold, train, calibrate } = fixture();
+  const slides = connectedSlides();
+  const bridge = new GestureSlides(session, slides);
+  assert.equal(await bridge.toggle(), false);
+  train();
+  calibrate();
+  assert.equal(await bridge.toggle(), true);
+  hold(0, 10);
+  assert.deepEqual(slides.sent, []);
+  hold(2, 5);
+  hold(0, 15);
+  assert.deepEqual(slides.sent, ['next']);
+  await Promise.resolve();
+  hold(2, 5);
+  hold(1, 4);
+  slides.pause('Target lost');
+  hold(1, 10);
+  assert.equal(session.paused, true);
+  assert.deepEqual(slides.sent, ['next']);
+  await bridge.toggle();
+  hold(1, 10);
+  assert.deepEqual(slides.sent, ['next']);
+  hold(2, 5);
+  hold(1, 6);
+  assert.deepEqual(slides.sent, ['next', 'previous']);
+});
+
+test('camera loss or an explicit pause during resume prevents late activation', async () => {
+  for (const stop of ['pause', 'camera']) {
+    const { session, train, calibrate } = fixture();
+    train();
+    calibrate();
+    const slides = connectedSlides();
+    let release;
+    slides.resume = () =>
+      new Promise((resolve) => {
+        release = () => {
+          resolve(true);
+        };
+      });
+    const bridge = new GestureSlides(session, slides);
+    const pending = bridge.toggle();
+    if (stop === 'pause') bridge.pause();
+    else session.setCameraState({ running: false });
+    release();
+    assert.equal(await pending, false);
+    assert.equal(session.paused, true);
+    assert.equal(slides.state.paused, true);
+  }
+});
+
+test('a stale resume or failed command cannot pause a newly started control session', async () => {
+  const { session, train, calibrate } = fixture();
+  train();
+  calibrate();
+  const slides = connectedSlides();
+  const bridge = new GestureSlides(session, slides);
+  let release;
+  slides.resume = () =>
+    new Promise((resolve) => {
+      release = resolve;
+    });
+  const oldStart = bridge.toggle();
+  bridge.pause();
+  slides.resume = async () => {
+    slides.state.paused = false;
+    slides.onChange(slides.state);
+    return true;
+  };
+  await bridge.toggle();
+  release(false);
+  await oldStart;
+  assert.equal(session.paused, false);
+  let fail;
+  slides.navigate = () =>
+    new Promise((resolve) => {
+      fail = resolve;
+    });
+  const oldCommand = bridge.navigate('next');
+  bridge.pause();
+  await bridge.toggle();
+  fail(false);
+  await oldCommand;
+  assert.equal(session.paused, false);
+});
+
+test('manual navigation clears the hold and navigation failure pauses recognition', async () => {
+  const { session, hold, train, calibrate } = fixture();
+  train();
+  calibrate();
+  const slides = connectedSlides();
+  const bridge = new GestureSlides(session, slides);
+  await bridge.toggle();
+  hold(2, 5);
+  hold(0, 4);
+  await bridge.navigate('previous');
+  hold(0, 10);
+  assert.deepEqual(slides.sent, ['previous']);
+  slides.navigate = async () => {
+    slides.pause('No change confirmed');
+    return false;
+  };
+  hold(2, 5);
+  hold(0, 6);
+  await Promise.resolve();
+  assert.equal(session.paused, true);
+  assert.equal(slides.state.message, 'No change confirmed');
 });

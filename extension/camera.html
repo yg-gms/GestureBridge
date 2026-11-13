@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GestureBridge — Camera permission</title>
+  </head>
+  <body>
+    <main class="camera-setup">
+      <h1>Enable your camera</h1>
+      <p>
+        Chrome needs this tab for the first permission prompt. Video stays on
+        your computer; no microphone is used.
+      </p>
+      <button id="enable" type="button">Allow camera access</button>
+      <p id="status" role="status">
+        Click above, then choose Allow in Chrome’s prompt.
+      </p>
+    </main>
+    <script type="module" src="/extension/camera-setup.js"></script>
+  </body>
+</html>

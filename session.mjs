@@ -11,6 +11,8 @@ export class GestureSession {
   constructor({ now = () => performance.now() } = {}) {
     this.now = now;
     this.onChange = () => {};
+    this.onCommand = null;
+    this.onTrainingChange = () => {};
     this.recorder = new PoseRecorder();
     this.calibration = new CalibrationSession();
     this.gate = new CommandGate();
@@ -38,6 +40,84 @@ export class GestureSession {
   }
   emit() {
     this.onChange(this.snapshot());
+  }
+
+  exportTraining() {
+    return {
+      version: 1,
+      features: 'palm-axis-xy-v1',
+      clips: { ...this.recorder.clips },
+      examples: this.recorder.examples.map(({ label, vector }) => ({
+        label,
+        vector: [...vector],
+      })),
+    };
+  }
+
+  restoreTraining(saved) {
+    if (
+      this.busy ||
+      saved?.version !== 1 ||
+      saved.features !== 'palm-axis-xy-v1' ||
+      !Array.isArray(saved.examples) ||
+      saved.examples.length > 135 ||
+      !LABELS.every(
+        (label) =>
+          Number.isInteger(saved.clips?.[label]) &&
+          saved.clips[label] >= 0 &&
+          saved.clips[label] <= 3,
+      ) ||
+      !saved.examples.every(
+        (sample) =>
+          LABELS.includes(sample?.label) &&
+          Array.isArray(sample.vector) &&
+          sample.vector.length === 42 &&
+          sample.vector.every(
+            (n) => Number.isFinite(n) && Number.isFinite(n * n),
+          ),
+      )
+    )
+      return false;
+    for (const label of LABELS) {
+      const count = saved.examples.filter(
+        (sample) => sample.label === label,
+      ).length;
+      if (count < saved.clips[label] * 12 || count > saved.clips[label] * 15)
+        return false;
+    }
+    this.recorder.clips = Object.fromEntries(
+      LABELS.map((label) => [label, saved.clips[label]]),
+    );
+    this.recorder.examples = saved.examples.map(({ label, vector }) => ({
+      label,
+      vector: [...vector],
+    }));
+    this.calibration.reset();
+    this.gate.reset();
+    this.paused = true;
+    this.started = false;
+    this.prediction = null;
+    this.latestPose = null;
+    this.step = this.trained ? 'calibrate' : 'teach';
+    this.selectedLabel =
+      LABELS.find((label) => this.recorder.clips[label] < 3) ?? 'next';
+    this.message = this.trained
+      ? 'Saved poses restored. Check them with fresh calibration.'
+      : 'Continue teaching your poses.';
+    this.emit();
+    return true;
+  }
+
+  resetTraining() {
+    this.recorder.cancel();
+    this.calibration.cancel();
+    this.restoreTraining({
+      version: 1,
+      features: 'palm-axis-xy-v1',
+      clips: { next: 0, previous: 0, neutral: 0 },
+      examples: [],
+    });
+    this.onTrainingChange();
   }
 
   blockReason() {
@@ -184,6 +264,7 @@ export class GestureSession {
     this.gate.reset();
     this.prediction = null;
     this.message = `${names[label]} cleared. Record three fresh clips, then recalibrate.`;
+    this.onTrainingChange();
     this.emit();
     return true;
   }
@@ -293,6 +374,7 @@ export class GestureSession {
       const outcome = this.recorder.add(this.latestPose, now);
       if (!this.recorder.active) {
         if (this.recorder.clips[label] > before) {
+          this.onTrainingChange();
           const cleanup = outcome.removed
             ? ` Ignored ${outcome.removed} unusual sample${outcome.removed === 1 ? '' : 's'}.`
             : '';
@@ -339,11 +421,14 @@ export class GestureSession {
         acceptedLabel(this.prediction, this.calibration.result.cutoff),
         now,
       );
-      if (command)
-        this.slideIndex = Math.max(
-          0,
-          Math.min(5, this.slideIndex + (command === 'next' ? 1 : -1)),
-        );
+      if (command) {
+        if (this.onCommand) this.onCommand(command);
+        else
+          this.slideIndex = Math.max(
+            0,
+            Math.min(5, this.slideIndex + (command === 'next' ? 1 : -1)),
+          );
+      }
     } else this.gate.reset();
     this.emit();
   }
