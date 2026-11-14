@@ -21,9 +21,6 @@ Start with the root [README](../README.md) for running and using GestureBridge.
 | `extension/slides.mjs`         | Binds one Slides tab and verifies navigation              |
 | `tests/`                       | Numerical, camera, workflow and rendered-component checks |
 
-Earlier plans and checkpoints are in [archive/](archive/). They describe their
-session's state; they are not the current implementation checklist.
-
 ## Hand tilt
 
 Feature vectors remain 42 numbers. After wrist-relative position and scale

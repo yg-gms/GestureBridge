@@ -1,54 +1,117 @@
 # GestureBridge
 
-Learn custom hand poses to control the built-in six-slide presentation demo.
+Control Google Slides with your own hand poses and a webcam. Choose poses for
+**Next**, **Previous** and **Neutral** (the pose you return to between commands),
+then teach GestureBridge to recognise them.
 
-Run `npm install` once, then `npm run dev` and open the local URL. Run `npm test`
-for automated checks and `npm run build` for the production bundle.
-Use `npm run format` to format the project and `npm run format:check` to check it.
+[Try the web demo](https://yg-gms.github.io/GestureBridge/) to practise with a
+built-in presentation. To control your own Google Slides, install the Chrome
+extension using the steps below.
 
-1. In **Teach**, start the camera and record three clips for each pose. The app
-   guides Next, Previous and Neutral one at a time, then opens calibration.
-2. In **Calibrate**, complete five fresh captures. Overlap failures stay on this
-   step with a retry message; successful calibration opens the presentation.
-3. In **Present**, click **Start controls**. Hold Neutral for 400 ms to get ready.
-4. Hold Next or Previous for 500 ms to change one slide. Hold Neutral again before
-   another command; holding a command continuously never repeats it.
-5. Use **Pause controls** or Escape to pause. Hiding the tab or stopping
-   the camera also pauses controls. Starting or resuming requires Neutral again.
+## Download and install for Google Slides
 
-Only one visible hand is accepted. Uncertainty, a changed pose, tracking loss,
-or a frame gap over 300 ms cancels a pending hold. Manual slide buttons work
-independently of gesture controls.
+You need **desktop Google Chrome 116 or newer**, a webcam and an internet
+connection for Google Slides. This is a beta version that you install manually.
+School or work computers may block this type of installation.
 
-The camera stays visible beside the current task on desktop. **Help & diagnostics**
-contains the longer instructions and numerical details. Return to **Teach** to
-retake one pose; this preserves the others and requires fresh calibration.
+### 1. Download and prepare the extension
 
-The interface uses React and shadcn/ui with Base UI. The normalization, recording,
-classifier, calibration and command gate remain separate JavaScript modules.
+There is no ready-to-install download published yet. For now, these commands
+prepare the extension from the project files. They use `zip` and `unzip`, which
+are included on macOS. On Linux, install those commands first. On Windows, run
+the build in a Linux environment such as WSL.
 
-Sideways hand tilt is normalized using the direction from the wrist to the middle
-knuckle. Choose different finger shapes for your commands; angle alone will not
-distinguish them. Turning your palm toward or away from the camera can still
-change its visible shape. Refresh, re-record and recalibrate after a change to
-normalization.
+1. Install the **LTS** version of [Node.js](https://nodejs.org/) if you do not
+   already have it. It includes the `npm` command used below.
+2. [Download the project ZIP](https://github.com/yg-gms/GestureBridge/archive/refs/heads/main.zip)
+   and unzip it into a folder you will keep on your computer.
+3. Open a terminal in the unzipped project folder. On macOS, open Terminal,
+   type `cd `, drag the project folder into the window, then press Enter.
+4. Run these commands one at a time:
 
-Recording now checks each clip before saving it. It keeps the consistent samples
-and reports how many unusual samples were ignored. If fewer than 12 of the 15
-samples remain, it asks you to record that clip again and keeps earlier clips.
-The filter uses a representative recorded pose and median-based spread; its
-initial settings still need physical testing. A consistently wrong pose cannot
-be identified from recording consistency alone.
+   ```sh
+   npm install
+   npm run build:extension
+   ```
 
-See the [project guide](docs/README.md) for the file map and filtering details.
+   This creates a folder named `dist-extension` inside the project folder.
 
-For the Google Slides extension beta, run `npm run build:extension`.
-Load `dist-extension/` through Chrome's **Load unpacked** action or unzip
-`releases/gesturebridge-slides-0.2.0.zip` and load that folder. Follow the
-[setup and acceptance check](extension/README.md). Teach poses, calibrate, and
-connect the real Slides deck. The extension saves one set of poses locally;
-reopening requires fresh calibration and explicit start. Keep its panel visible.
+### 2. Add it to Chrome
 
-The public web demo keeps examples/calibration in memory and controls its own
-viewer; reloading clears that demo session. Unfamiliar poses can still resemble
-recorded ones in either version.
+1. Type `chrome://extensions` into Chrome's address bar and press Enter.
+2. Turn on **Developer mode** in the top-right corner.
+3. Click **Load unpacked** and select the **dist-extension** folder. Select the
+   folder itself, not a ZIP file or the project's `extension` folder.
+4. Click Chrome's puzzle-piece **Extensions** button and pin **GestureBridge**.
+5. Open your Google Slides presentation in Chrome, then click the GestureBridge
+   toolbar icon to open its side panel.
+
+Keep the installed folder on your computer. Chrome loads the extension from it.
+See [Chrome's installation guide](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked)
+if you need help finding these controls.
+
+## Set up your poses
+
+1. Click **Start camera** in the panel. On first use, a setup tab opens. Click
+   **Allow camera access**, accept Chrome's camera prompt, close the setup tab,
+   then click **Start camera** again in the panel.
+2. In **Teach**, choose three comfortable, different hand shapes for Next,
+   Previous and Neutral. For example, try one finger, two fingers and an open
+   palm. Use the same hand throughout and keep only one hand in view.
+3. Hold the requested pose and click **Record clip**. Record three clips for
+   each pose, relaxing and slightly repositioning your hand between clips.
+4. In **Calibrate**, follow the five on-screen captures. This checks whether
+   GestureBridge can tell your poses apart. If it asks you to retry, use more
+   distinct finger shapes and retake the relevant pose. Changing only your
+   hand's sideways angle will not make a different command.
+
+## Use it with your Google Slides
+
+1. Keep your Slides presentation open in the same Chrome window as the panel.
+2. In **Present**, click **Open slideshow**. Wait for it to load, then click
+   **Connect Slides tab**.
+3. Click **Start gesture controls**.
+4. Hold **Neutral** for 0.4 seconds to get ready. Hold **Next** or **Previous**
+   for 0.5 seconds to move one slide.
+5. Return to **Neutral** before each new command. Holding Next or Previous
+   continuously moves only one slide.
+6. Click **Pause controls** to pause. You can also press Escape while the panel
+   has focus. Closing or hiding the panel pauses controls; closing it also stops
+   the camera.
+
+Keep the panel visible while presenting. Start with a short presentation without
+animations and try moving forward and backward before using it for an audience.
+Fullscreen, presenter view and animations still need testing. Published Slides
+links and speaker-notes windows are not supported.
+
+Your taught poses save on this computer. Wait for **Poses saved** before closing
+the panel. When you reopen it, start the camera, repeat **Calibrate**, reconnect
+Slides and start controls again. **Retake** replaces one pose; **Reset setup**
+deletes all saved poses. Removing the extension also deletes them.
+
+## If something does not work
+
+- **Camera will not start:** allow camera access in the setup tab, then return to
+  the panel and click **Start camera** again.
+- **Slides do not move:** return to the Slides tab, click the GestureBridge
+  toolbar icon there, reconnect and start controls again. Hold Neutral first.
+  Reaching the first or last slide can also pause controls.
+- **Gestures get confused:** keep one hand clearly visible and use different
+  finger shapes. Retake the affected poses and repeat Calibrate. Unfamiliar
+  poses can sometimes be mistaken for taught ones.
+
+Camera images are processed on your computer and are not recorded or uploaded by
+GestureBridge. The extension saves pose measurements locally, without cloud sync.
+See the [extension guide](extension/README.md) for permissions and testing details.
+
+## Run or develop the web demo
+
+After `npm install`, run `npm run dev` and open the local address it prints.
+The web demo controls its own presentation, and reloading clears its taught poses.
+
+- `npm test` runs automated checks.
+- `npm run build` builds the web demo.
+- `npm run build:extension` builds the extension and a ZIP in `releases/`.
+- `npm run format:check` checks formatting.
+
+For code details, see the [project guide](docs/README.md).
