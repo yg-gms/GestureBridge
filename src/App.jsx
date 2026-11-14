@@ -76,7 +76,7 @@ function CaptureProgress({ capture }) {
         <div className="meta-row">
           <span>Hold steady</span>
           <span>
-            {capture.kind === 'training' ? '3-second clip' : '2-second capture'}
+            {capture.kind === 'training' ? 'Recording clip' : 'Capturing pose'}
           </span>
         </div>
         <Progress
@@ -136,7 +136,7 @@ function Teach({ session, view }) {
             <p className="quiet">
               {count === 3
                 ? 'You can retake this pose at any time.'
-                : `Clip ${count + 1} of 3 · hold for 3 seconds`}
+                : `Clip ${count + 1} of 3 · hold until saved (about 3 seconds)`}
             </p>
           </div>
         </div>
@@ -295,7 +295,7 @@ function Calibrate({ session, view }) {
             }
           >
             <ScanLine data-icon="inline-start" />
-            {view.busy ? 'Capturing…' : 'Capture · 2 seconds'}
+            {view.busy ? 'Capturing…' : 'Capture · about 2 seconds'}
           </Button>
         )}
         <Button

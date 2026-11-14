@@ -167,7 +167,11 @@ export class GestureSession {
               100,
               Math.max(
                 0,
-                (now - active.start) / (this.recorder.active ? 30 : 20),
+                Math.min(
+                  (now - active.start) / (this.recorder.active ? 30 : 20),
+                  (active.samples.length / (this.recorder.active ? 15 : 10)) *
+                    100,
+                ),
               ),
             ),
           }
@@ -249,7 +253,7 @@ export class GestureSession {
     this.calibration.reset();
     this.paused = true;
     this.gate.reset();
-    this.message = `Hold your ${names[this.selectedLabel]} pose for 3 seconds.`;
+    this.message = `Hold your ${names[this.selectedLabel]} pose until the clip is saved (about 3 seconds).`;
     this.emit();
     return true;
   }
@@ -282,7 +286,8 @@ export class GestureSession {
       return false;
     this.paused = true;
     this.gate.reset();
-    this.message = 'Hold this pose steady for 2 seconds.';
+    this.message =
+      'Hold this pose steady until capture finishes (about 2 seconds).';
     this.emit();
     return true;
   }

@@ -63,7 +63,7 @@ test('a delayed frame cannot commit an undersampled clip', () => {
   const recorder = new PoseRecorder();
   recorder.start('next', 0);
   recorder.add(vector, 0);
-  recorder.add(vector, 3100);
+  recorder.add(vector, 6100);
   assert.equal(recorder.clips.next, 0);
   assert.equal(recorder.examples.length, 0);
   assert.equal(recorder.active, null);
@@ -74,6 +74,34 @@ test('ordinary detection timing jitter still captures a complete 3-second clip',
   for (let t = 100; t <= 3100; t += 120) recorder.add(vector, t);
   assert.equal(recorder.clips.next, 1);
   assert.equal(recorder.examples.length, 15);
+});
+
+test('slower tracking gets extra time to collect 15 distinct frames', () => {
+  for (const interval of [210, 300, 350]) {
+    const recorder = new PoseRecorder();
+    recorder.start('next', 0);
+    let outcome;
+    for (let t = interval; t <= 6000 && recorder.active; t += interval)
+      outcome = recorder.add(Array(42).fill(t / 100000), t);
+    assert.equal(outcome?.status, 'saved');
+    assert.equal(recorder.examples.length, 15);
+    assert.equal(
+      new Set(recorder.examples.map(({ vector }) => vector[0])).size,
+      15,
+    );
+  }
+});
+
+test('tracking too slow to fill the extended window still requests a retake', () => {
+  const recorder = new PoseRecorder();
+  recorder.start('next', 0);
+  for (let t = 500; t < 6000; t += 500) recorder.add(vector, t);
+  assert.deepEqual(recorder.add(vector, 6000), {
+    status: 'retry',
+    reason: 'incomplete',
+  });
+  assert.equal(recorder.examples.length, 0);
+  assert.equal(recorder.active, null);
 });
 
 function recordSamples(recorder, values, start = 0) {

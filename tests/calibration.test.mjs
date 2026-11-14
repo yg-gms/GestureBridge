@@ -149,8 +149,22 @@ test('cancellation and slow tracking discard only the current calibration captur
   assert.equal(session.captures.length, 1);
   session.start(6000);
   session.add(pose(2), examples, 6100);
-  assert.equal(session.add(pose(2), examples, 8100), 'retry');
+  assert.equal(session.add(pose(2), examples, 10100), 'retry');
   assert.equal(session.captures.length, 1);
+  assert.equal(session.active, null);
+});
+
+test('slower calibration tracking collects all ten fresh samples before saving', () => {
+  const session = new CalibrationSession();
+  session.start(0);
+  for (let t = 300; t <= 3000; t += 300)
+    assert.equal(session.add(pose(t / 100000), examples, t), null);
+  assert.equal(session.add(pose(0), examples, 3300), 'saved');
+  assert.equal(session.captures[0].length, 10);
+  assert.equal(
+    new Set(session.captures[0].map(({ distance }) => distance)).size,
+    10,
+  );
   assert.equal(session.active, null);
 });
 

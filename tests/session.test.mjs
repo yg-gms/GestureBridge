@@ -73,6 +73,25 @@ test('choosing another pose keeps it selected until its three clips are recorded
   assert.equal(session.snapshot().clips.neutral, 1);
 });
 
+test('slow tracking keeps recording progress below complete until enough samples arrive', () => {
+  let now = 0;
+  const session = new GestureSession({ now: () => now });
+  session.setCameraState({ running: true });
+  session.track([poses[0]], 640, 480);
+  assert.equal(session.record(), true);
+  for (now = 300; now <= 3000; now += 300) session.track([poses[0]], 640, 480);
+  const view = session.snapshot();
+  assert.equal(view.busy, true);
+  assert.ok(view.capture.progress < 100);
+  for (now = 3300; now <= 4800; now += 300) session.track([poses[0]], 640, 480);
+  assert.equal(session.snapshot().clips.next, 1);
+  assert.equal(session.snapshot().busy, false);
+  assert.equal(
+    new GestureSession().restoreTraining(session.exportTraining()),
+    true,
+  );
+});
+
 test('recording reports a removed accidental pose without adding it to training', () => {
   const { session, frame } = fixture();
   frame(0);

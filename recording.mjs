@@ -24,7 +24,11 @@ export class PoseRecorder {
       this.cancel();
       return;
     }
-    if (now - clip.start >= 3000) {
+    // Allow slower trackers to collect fresh frames without reducing sample quality.
+    if (
+      now - clip.start >= 3000 &&
+      (clip.samples.length === 15 || now - clip.start >= 6000)
+    ) {
       this.cancel();
       if (clip.samples.length !== 15)
         return { status: 'retry', reason: 'incomplete' };

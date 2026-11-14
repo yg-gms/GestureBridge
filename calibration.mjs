@@ -100,7 +100,10 @@ export class CalibrationSession {
       this.cancel();
       return 'retry';
     }
-    if (now - clip.start >= 2000) {
+    if (
+      now - clip.start >= 2000 &&
+      (clip.samples.length === 10 || now - clip.start >= 4000)
+    ) {
       this.cancel();
       if (clip.samples.length !== 10) return 'retry';
       this.captures.push(clip.samples);
