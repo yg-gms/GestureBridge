@@ -4,9 +4,10 @@ Control Google Slides with your own hand poses and a webcam. Choose poses for
 **Next**, **Previous** and **Neutral** (the pose you return to between commands),
 then teach GestureBridge to recognise them.
 
-[Try the web demo](https://yg-gms.github.io/GestureBridge/) to practise with a
-built-in presentation. To control your own Google Slides, install the Chrome
-extension using the steps below.
+**Web demo (GitHub Pages):** [https://yg-gms.github.io/GestureBridge/](https://yg-gms.github.io/GestureBridge/)
+
+Practise with the built-in presentation in the web demo. To control your own
+Google Slides, install the Chrome extension using the steps below.
 
 ## Download and install for Google Slides
 
